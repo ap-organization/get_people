@@ -1,14 +1,16 @@
+
 {
   "name": "back",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "functions-framework --target=scrapper"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/functions-framework": "^1.7.1",
     "chalk": "^4.1.0",
     "google-spreadsheet": "^3.0.14",
     "puppeteer": "^5.5.0"

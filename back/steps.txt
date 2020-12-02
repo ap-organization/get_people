@@ -1,3 +1,3 @@
 npm init
 npm install puppeteer google-spreadsheet chalk
-node index.js
+test locally: npm run start
