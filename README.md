@@ -32,3 +32,4 @@ Created by [@Fraberg](https://github.com/Fraberg/) - feel free to contact me
 - https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#targetcreatecdpsession
 - https://jsoverson.medium.com/using-chrome-devtools-protocol-with-puppeteer-737a1300bac0
 - https://jsoverson.medium.com/how-to-deploy-node-js-functions-to-google-cloud-8bba05e9c10a
+- https://stackoverflow.com/questions/58048447/keeping-same-puppeteer-page-open-nodejs
