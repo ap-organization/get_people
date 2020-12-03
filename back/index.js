@@ -58,6 +58,8 @@ async function printerror(error, debug, can_exit) {
 // main function
 exports.scrapper = async (req, res) => {
 
+    console.log(chalk.cyan("--- cloud function"));
+
     /* -------------------------------- */
     // debug
     /* -------------------------------- */
@@ -110,6 +112,7 @@ exports.scrapper = async (req, res) => {
     // check if target_company exists in query
     // check if target_lead exists in query
     /* -------------------------------- */
+    console.log(chalk.cyan("--- parse query params"));
     if (req.query.hasOwnProperty('target_company')) {
         output.query.target_company = req.query.target_company.trim();
     } else {
@@ -122,28 +125,30 @@ exports.scrapper = async (req, res) => {
     } else {
         output.query.target_lead = "na";
     }
-    console.log(chalk.cyan("--- cloud function | scrapper ---"));
     /* -------------------------------- */
 
+    /* -------------------------------- */
+    // init Puppeteer
+    /* -------------------------------- */
+    console.log(chalk.cyan("--- init puppeteer"));
+    let args = [ '--no-sandbox', '--disable-gpu', '--headless' ];
+    if (DEBUG) { args.pop('--headless') };
+    let browser = await puppeteer.launch({
+        headless: false,
+        defaultViewport: null,
+        args: args
+    });
+    let page = await browser.newPage();
+    // console.log("page user agent: " + browser.userAgent());
+    await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
+    /* -------------------------------- */
+    
     try {
-        /* -------------------------------- */
-        // init Puppeteer
-        /* -------------------------------- */
-        let args = [ '--no-sandbox', '--disable-gpu', '--headless' ];
-        if (DEBUG) { args.pop('--headless') };
-        let browser = await puppeteer.launch({
-            headless: false,
-            defaultViewport: null,
-            args: args
-        });
-        let page = await browser.newPage();
-        // console.log("page user agent: " + browser.userAgent());
-        await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
-        /* -------------------------------- */
 
         /* -------------------------------- */
         // login to LinkedIn
         /* -------------------------------- */
+        console.log(chalk.cyan("--- login to LinkedIn"));
         try {
             console.log(chalk.yellow("trying to login ..."));
             await page.goto(params.linkedin.urls.login, { waitUntil: 'domcontentloaded' });
@@ -396,15 +401,15 @@ exports.scrapper = async (req, res) => {
                 return ;
             }
             console.log(chalk.yellow("page is now:", page.url()));
+            output.results.lead.linkedin_profile = page.url().trim();
             
             const elements = await page.$$('span.distance-badge');
-            
-            $$('span.distance-badge')[0].parentElement.previousElementSibling.innerText;
-
-            let parent = await page.evaluateHandle(el => el.parentElement, elements[0]);
-            let previous = await page.evaluateHandle(el => el.previousElementSibling, parent);
-            output.results.lead.name = (await (await previous.getProperty("textContent")).jsonValue()).trim();
-            if (DEBUG) { console.log(chalk.green("lead.name:", output.results.lead.name)); }
+            if (elements) {
+                let parent = await page.evaluateHandle(el => el.parentElement, elements[0]);
+                let previous = await page.evaluateHandle(el => el.previousElementSibling, parent);
+                output.results.lead.name = (await (await previous.getProperty("textContent")).jsonValue()).trim();
+                if (DEBUG) { console.log(chalk.green("lead.name:", output.results.lead.name)); }
+            }
         }
         /* -------------------------------- */
 
