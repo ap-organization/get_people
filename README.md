@@ -4,6 +4,7 @@
 ## Table of contents
 * [General info](#general-info)
 * [Technologies](#technologies)
+* [Workflow](#workflow)
 * [Setup](#setup)
 * [Status](#status)
 * [Contact](#contact)
@@ -14,6 +15,12 @@ WIP
 
 ## Technologies
 * Puppeteer
+
+## Workflow
+1/ get linkedin contact<br>
+2/ fetch Drop Contact with params name/last_name/company and return if result<br>
+3/ fetch hunter.io with params company and return if result<br>
+4/ fetch verifyemailaddress.org with pre-built emails<br>
 
 ## Setup
 WIP
