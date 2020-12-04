@@ -1,7 +1,5 @@
 // todo
-// await page.waitForSelector('.mySelector')
-// code refactoring
-
+// validations if link finish by /about for case: target_company=https://www.linkedin.com/company//about/
 
 'use strict'
 
@@ -9,7 +7,6 @@
 const puppeteer = require('puppeteer');
 const params = require('./params.json');
 const chalk = require('chalk');
-// const { GoogleSpreadsheet } = require('google-spreadsheet');
 
 const errors = {
     "!query": "!query - can't find query param",
@@ -22,7 +19,8 @@ const errors = {
 }
 
 // auto scroll helper
-// Some websites load data as you navigate, and you may need to reproduce a full “human” browsing to get the information you need.
+// Used for: some websites load data as you navigate, and you may need to reproduce a full “human” browsing to get the information you need.
+// @param {puppeteer object} page - the page to scroll down
 async function autoScroll(page) {
     await page.evaluate(async () => {
         await new Promise((resolve, reject) => {
@@ -41,46 +39,41 @@ async function autoScroll(page) {
     });
 }
 
-// wait helper
+/**
+ * wait
+ * @param {puppeteer object} page - the page to scroll down
+ */ 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-// run exit
+/**
+ * run_exit
+ * @param {string} status 
+ */
 const run_exit = (status) => {
     console.log(chalk.yellow("exit", status));
     process.exit(status);
 }
 
-// log helper
-async function printerror(error, debug, can_exit) {
-    if (debug) { 
-        console.log({"error": error});
-        // await wait(50000);
-    }
-    if (!can_exit) {
-        // await wait(50000);
-    }
-    return can_exit;
-}
-
-// main function
+/**
+ * @params (Request) req - request with query params
+ * @params (Response?) res - json response
+ */
 exports.scrapper = async (req, res) => {
-
     console.log(chalk.cyan("--- cloud function"));
-    console.log(chalk.yellow("req.method:"), JSON.stringify(req.method));
-    console.log(chalk.yellow("req.params:"), JSON.stringify(req.params));
-    console.log(chalk.yellow("req.query:"), JSON.stringify(req.query));
-    console.log(chalk.yellow("req.body:"), JSON.stringify(req.body));
 
     /* -------------------------------- */
     // debug
     /* -------------------------------- */
     let DEBUG;
-    DEBUG = true;
-    // res.status(200).send(JSON.stringify({"req": req.query}));
+    // DEBUG = true;
+    console.log(chalk.yellow("req.method:"), JSON.stringify(req.method));
+    console.log(chalk.yellow("req.params:"), JSON.stringify(req.params));
+    console.log(chalk.yellow("req.query:"), JSON.stringify(req.query));
+    console.log(chalk.yellow("req.body:"), JSON.stringify(req.body));
     /* -------------------------------- */
 
     /* -------------------------------- */
-    // design res object
+    // prepare response to send
     /* -------------------------------- */
     res.setHeader('Content-Type', 'application/json');
     let output = {
@@ -90,8 +83,9 @@ exports.scrapper = async (req, res) => {
         },
         results: {
             company: {
+                exists: false,
+                linkedin_url: "",
                 banner: {
-                    site_url: "",
                     name: "",
                     nb_followers: "",
                     link_to_employee_list: ""
@@ -111,31 +105,34 @@ exports.scrapper = async (req, res) => {
                 }
             },
             lead: {
+                exists: false,
                 name: "",
                 linkedin_profile: ""
             }
         }
-        
     };
     /* -------------------------------- */
 
     /* -------------------------------- */
-    // check if target_company exists in query
-    // check if target_lead exists in query
+    // check query string in req.query:
+    // @param {string} target_company - must exist
+    // @param {string} target_lead - is optional
     /* -------------------------------- */
     console.log(chalk.cyan("--- parse query params"));
-    if (req.query.hasOwnProperty('target_company')) {
-        output.query.target_company = req.query.target_company.trim();
-    } else {
-        output.query.target_company = "na";
-        res.status(500).send({"error": errors["!query"]});
-        if (await printerror(errors["!query"], DEBUG, true)) { run_exit(0);; };
+    output.query.target_company = req.query.hasOwnProperty('target_company') ? req.query.target_company.trim() : "na";
+    output.query.target_lead = req.query.hasOwnProperty('target_lead') ? req.query.target_lead.trim() : "na";
+    if (output.query.target_company === "na") {
+        res.status(400).send({ "error": errors["!query"] });
+        return;
     }
-    if (req.query.hasOwnProperty('target_lead')) {
-        output.query.target_lead = req.query.target_lead.trim();
-    } else {
-        output.query.target_lead = "na";
-    }
+    /* -------------------------------- */
+
+    /* -------------------------------- */
+    // proxy
+    /* -------------------------------- */
+    // todo
+    let some_ip = '51.254.182.54:1000';
+    // proxybot: "https://proxybot.io/api/v1/#KEY#?geolocation_code=mx&url=https://whatismycountry.com";
     /* -------------------------------- */
 
     /* -------------------------------- */
@@ -146,80 +143,105 @@ exports.scrapper = async (req, res) => {
         '--disable-gpu',
         '--no-sandbox',
         '--headless',
+        `--proxy-server=${some_ip}`,
         '--disable-dev-shm-usage',
         '--disable-setuid-sandbox',
-        // '--timeout=30000',
         '--no-first-run',
         '--no-zygote',
-        // '--single-process', "--proxy-server='direct://'",
         '--proxy-bypass-list=*',
         '--deterministic-fetch',
     ];
-
     let browser = await puppeteer.launch({
         headless: true,
-        // defaultViewport: null,
+        defaultViewport: null,
         args: args
     });
     let page = await browser.newPage();
-    // console.log("page user agent: " + browser.userAgent());
+    // console.log("default browser user agent: " + browser.userAgent());
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
+    // console.log("new browser user agent: " + browser.userAgent());
     /* -------------------------------- */
-    
-    try {
 
+    try {
         /* -------------------------------- */
         // login to LinkedIn
         /* -------------------------------- */
         console.log(chalk.cyan("--- login to LinkedIn"));
         try {
-            console.log(chalk.yellow("trying to login ..."));
-            await page.goto("https://www.linkedin.com/login/fr", { waitUntil: 'domcontentloaded' });
-            // await page.type('#username', "all.apps.services@gmail.com", { delay: 30 });
-            // await page.type('#password', "service_password", { delay: 30 });
-            await page.type('#username', params.linkedin.auth.mail.mail, { delay: 30 });
-            await page.type('#password', params.linkedin.auth.mail.password, { delay: 30 });
-            console.log(chalk.yellow("wait 5000"));
-            console.log(chalk.yellow("submit login"));
-            // await Promise.all([await page.click('#app__container > main > div:nth-child(3) > form > div.login__form_action_container > button')]);
+            console.log(chalk.yellow("go to:"), params.linkedin.urls.login);
+            await page.goto(params.linkedin.urls.login, { waitUntil: 'domcontentloaded' });
+            await page.type('#username', params.linkedin.auth.fake.mail, { delay: 30 });
+            await page.type('#password', params.linkedin.auth.fake.password, { delay: 30 });
+            console.log(chalk.yellow("submit login form"));
             const [submit_button] = await page.$x("//button[contains(., 'S’identifier')]");
-            // console.log("submit_button:", submit_button);
             await page.evaluateHandle(el => el.click(), submit_button);
-            console.log(chalk.yellow("wait 5000"));
+            console.log(chalk.yellow("waiting for page to load ..."));
             await wait(5000);
-            if (page.url() != "https://www.linkedin.com/feed/") {
+            /* -------------------------------- */
+            // check if redirection
+            /* -------------------------------- */
+            if (page.url() != params.linkedin.urls.feed) {
+                console.log(chalk.red("ok now on:", page.url()));
+                console.log(chalk.red("go get the code"));
+                await wait(1000 * 30);
+                /* -------------------------------- */
+                // init GoogleSpreadsheet to get verification code
+                /* -------------------------------- */
+                console.log("trying to fetch gsheet ...");
+                const doc = new GoogleSpreadsheet(params.gsheet.id);
+                await doc.useServiceAccountAuth({
+                    client_email: params.gsheet.client_email,
+                    private_key: params.gsheet.private_key,
+                });
+                await doc.loadInfo();
+                const sheet = doc.sheetsByIndex[0];
+                await sheet.loadCells('A1:A1');
+                const a1 = sheet.getCell(0, 0);
+                console.log(a1.value);
+                /* -------------------------------- */
+
                 /* -------------------------------- */
                 // verification
                 /* -------------------------------- */
-                console.log(chalk.red("!feed error, page is", page.url()));
-                res.status(500).send({"error": errors["!feed"]});
-                if (await printerror(errors["!feed"], true, false)) { run_exit(0); }
-                // await wait(120000);
+                console.log("trying to type code label");
+                await page.type('#input__email_verification_pin', String(a1.value), { delay: 30 }); // params.linkedin.auth.fake.password
+                
+                console.log(chalk.yellow("trying to get code submit"));
+                const [code_submit] = await page.$x("//button[contains(., 'Envoyer')]");
+                if (code_submit) { console.log("code_submit is selected"); };
+                await page.evaluateHandle(el => el.click(), code_submit);
+                console.log(chalk.yellow("waiting for page to load ..."));
+                await wait(5000);
+                console.log("ok now on:", page.url());
+                /* -------------------------------- */
+
+                /* -------------------------------- */
+                // retry check if != feed
+                /* -------------------------------- */
+                if (page.url() != params.linkedin.urls.feed) {
+                    console.log(chalk.red("still !feed error, page is", page.url()));
+                    console.log(chalk.cyan("--- closing puppeteer"));
+                    res.status(422).send({ "error": errors["!feed"] });
+                    await page.close();
+                    await browser.close();
+                    // process.exit(0);
+                    return;
+                }
                 /* -------------------------------- */
             }
+            /* -------------------------------- */
             console.log(chalk.yellow("waiting for selector #global-nav-search"));
             await page.waitForSelector('#global-nav-search');
             console.log(chalk.green("successfully logged in"));
-        } catch {
+        } catch (error) {
+            console.log(chalk.red("error:", error));
             console.log(chalk.cyan("--- closing puppeteer"));
+            res.status(422).send({ "error": errors["!login"] });
             await page.close();
             await browser.close();
-            res.status(500).send({"error": errors["!login"]});
-            if (await printerror(errors["!login"], DEBUG, true)) { run_exit(0); };
-            return ;
+            // process.exit(0);
+            return;
         }
-        /* -------------------------------- */
-
-        /* -------------------------------- */
-        // init GoogleSpreadsheet
-        /* -------------------------------- */
-        // const doc = new GoogleSpreadsheet(params.gsheet.id);
-        // await doc.useServiceAccountAuth({
-        //     client_email: creds.client_email,
-        //     private_key: creds.private_key,
-        // });
-        // await doc.loadInfo();
-        // const sheet = doc.sheetsByIndex[0];
         /* -------------------------------- */
 
         /* -------------------------------- */
@@ -229,27 +251,28 @@ exports.scrapper = async (req, res) => {
             console.log(chalk.cyan("--- get target company data"));
             console.log(chalk.yellow("go to:", output.query.target_company));
             await page.goto(output.query.target_company, { waitUntil: 'domcontentloaded' });
+            // await wait(1000);
+            // await page.waitForNavigation();
 
             /* -------------------------------- */
             // check if profile exists
             /* -------------------------------- */
-            await wait(1000);
             const [company_doesnt_exit] = await page.$x("//p[contains(., 'est pas disponible')]");
             if (company_doesnt_exit) {
-                console.log(chalk.yellow("profile", output.query.target_company, "does not exist"));
+                console.log(chalk.red("profile", output.query.target_company, "does not exist"));
                 console.log(chalk.cyan("--- closing puppeteer"));
+                res.status(422).send({ "error": errors["!profile"] });
                 await page.close();
                 await browser.close();
-                res.status(500).send({"error": errors["!profile"]});
-                if (await printerror(errors["!profile"], DEBUG, true)) { run_exit(0); };
-                return ;
+                // process.exit(0);
+                return;
             }
-            console.log(chalk.yellow("page is now:", page.url()));
+            /* -------------------------------- */
+            console.log(chalk.green("company does exist, page.url():"), page.url());
 
-            // --- banner
-            // linkedIn url
-            output.results.company.banner.linkedin_url = "https://www.linkedin.com/company/ap-capital-advisory/about/";
-
+            // --- about banner
+            // output.results.company.linkedIn url
+            output.results.company.linkedin_url = page.url();
             // output.results.company.banner.link_to_employee_list
             let hrefs = []
             hrefs = await page.evaluate(
@@ -258,21 +281,15 @@ exports.scrapper = async (req, res) => {
                     a => a.getAttribute('href')
                 )
             );
+            output.results.company.banner.link_to_employee_list = "na"
             for (var i = 0; i < hrefs.length; i++) {
                 if (hrefs[i].startsWith("/search/results/people/")) {
                     output.results.company.banner.link_to_employee_list = "https://www.linkedin.com" + hrefs[i];
                     break;
                 }
             }
-            if (output.results.company.banner.link_to_employee_list === "") {
-                output.results.company.banner.link_to_employee_list = "na";
-            }
 
-            // --- about
-            // wait untill content is loaded:
-            // await page.waitForXPath("//h4[contains(., 'Présentation')]", 5000);
-            await wait(1000);
-
+            // --- about body
             // output.results.company.about.description
             const [presentation_h4] = await page.$x("//h4[contains(., 'Présentation')]");
             if (presentation_h4) {
@@ -283,7 +300,6 @@ exports.scrapper = async (req, res) => {
                 output.results.company.about.description = "na";
                 console.log(chalk.redBright("no description"));
             }
-
             // output.results.company.about.site_url
             const [site_web_dt] = await page.$x("//dt[contains(., 'Site web')]");
             if (site_web_dt) {
@@ -294,7 +310,6 @@ exports.scrapper = async (req, res) => {
                 output.results.company.about.site_url = "na";
                 console.log(chalk.redBright("no site_url"));
             }
-
             // output.results.company.about.sector
             const [sector_dt] = await page.$x("//dt[contains(., 'Secteur')]");
             if (sector_dt) {
@@ -305,7 +320,6 @@ exports.scrapper = async (req, res) => {
                 output.results.company.about.sector = "na";
                 console.log(chalk.redBright("no sector"));
             }
-
             // output.results.company.about.employee_range
             const [employee_range_dt] = await page.$x("//dt[contains(., 'Taille de ')]");
             if (employee_range_dt) {
@@ -333,7 +347,6 @@ exports.scrapper = async (req, res) => {
                 output.results.company.about.employee_range = "na";
                 console.log(chalk.redBright("no employee_range"));
             }
-
             // output.results.company.about.headquarters
             const [headquarters_dt] = await page.$x("//dt[contains(., 'Siège social')]");
             if (headquarters_dt) {
@@ -344,7 +357,6 @@ exports.scrapper = async (req, res) => {
                 output.results.company.about.headquarters = "na";
                 console.log(chalk.redBright("no headquarters"));
             }
-
             // output.results.company.about.type
             const [type_dt] = await page.$x("//dt[contains(., 'Type')]");
             if (type_dt) {
@@ -357,11 +369,11 @@ exports.scrapper = async (req, res) => {
             }
         } catch {
             console.log(chalk.cyan("--- closing puppeteer"));
+            res.status(422).send({ "error": errors["!about"] });
             await page.close();
             await browser.close();
-            res.status(500).send({"error": errors["!about"]});
-            if (await printerror(errors["!about"], DEBUG, true)) { run_exit(0); };;
-            return ;
+            // process.exit(0);
+            return;
         }
 
         /* -------------------------------- */
@@ -372,9 +384,7 @@ exports.scrapper = async (req, res) => {
                 console.log(chalk.cyan("--- get list of employees"));
                 await page.goto(output.results.company.banner.link_to_employee_list, { waitUntil: 'domcontentloaded' });
                 await autoScroll(page);
-                /* -------------------------------- */
-                console.log(chalk.yellow("page is now:", page.url()));
-
+                console.log(chalk.yellow("page.url() is now:", page.url()));
                 // get hrefs employees
                 let hrefs = [];
                 hrefs = await page.evaluate(
@@ -383,19 +393,16 @@ exports.scrapper = async (req, res) => {
                         a => a.getAttribute('href')
                     )
                 );
-
                 // get linkedIn url profiles
                 for (var i = 0; i < hrefs.length; i++) {
                     if (hrefs[i].startsWith("/in/") && output.results.company.employees.hrefs.indexOf(hrefs[i]) > -1) {
                         let complete_url = "https://www.linkedin.com" + hrefs[i];
-                        if (DEBUG) { console.log(chalk.green("profile ", i), complete_url); }
                         output.results.company.employees.hrefs.push(complete_url);
                         if (output.params.target_lead != "na" && complete_url === output.params.target_lead) {
                             output.results.lead.linkedin_profile = complete_url;
                         }
                     }
                 }
-
                 // get names
                 const elements = await page.$$('span.distance-badge');
                 for (var i = 0; i < elements.length; i++) {
@@ -407,16 +414,16 @@ exports.scrapper = async (req, res) => {
                     }
                     let separator = await page.evaluateHandle(el => el.previousElementSibling, elements[i]);
                     employee.name = (await (await separator.getProperty("textContent")).jsonValue()).trim();
-                    if (DEBUG) { console.log(chalk.green("employee.name:"), employee.name); }
                     output.results.company.employees.list.push(employee);
+                    console.log(chalk.green("employee.name:"), employee.name);
                 }
             } catch {
                 console.log(chalk.cyan("--- closing puppeteer"));
+                res.status(422).send({ "error": errors["!employees"] });
                 await page.close();
                 await browser.close();
-                res.status(500).send({"error": errors["!employees"]});
-                if (await printerror(errors["!employees"], DEBUG, true)) { run_exit(0); };
-                return ;
+                // process.exit(0);
+                return;
             }
         }
         /* -------------------------------- */
@@ -428,30 +435,32 @@ exports.scrapper = async (req, res) => {
             console.log(chalk.cyan("--- get name of target lead"));
             console.log(chalk.yellow("go to:", output.query.target_lead));
             await page.goto(output.query.target_lead, { waitUntil: 'domcontentloaded' });
+            // await page.waitForNavigation();
+            // await wait(1000);
 
             /* -------------------------------- */
             // check if lead profile exists
             /* -------------------------------- */
-            await wait(1000);
-            const [lead_doesnt_exit] = await page.$x("//p[contains(., 'est pas disponible')]");
+            const [lead_doesnt_exit] = await page.$x("//h1[contains(., 'est pas disponible')]");
             if (lead_doesnt_exit) {
-                console.log(chalk.yellow("profile", output.query.target_lead, "does not exist"));
+                console.log(chalk.red("profile", output.query.target_lead, "does NOT exist"));
                 console.log(chalk.cyan("--- closing puppeteer"));
+                res.status(422).send({ "error": errors["!profile"] });
                 await page.close();
                 await browser.close();
-                res.status(500).send({"error": errors["!profile"]});
-                if (await printerror(errors["!profile"], DEBUG, true)) { run_exit(0); };
-                return ;
+                // process.exit(0);
+                return;
             }
-            console.log(chalk.yellow("page is now:", page.url()));
+            /* -------------------------------- */
+            console.log(chalk.green("lead target does exist, page.url():", page.url()));
             output.results.lead.linkedin_profile = page.url().trim();
-            
+
             const elements = await page.$$('span.distance-badge');
             if (elements) {
                 let parent = await page.evaluateHandle(el => el.parentElement, elements[0]);
                 let previous = await page.evaluateHandle(el => el.previousElementSibling, parent);
                 output.results.lead.name = (await (await previous.getProperty("textContent")).jsonValue()).trim();
-                if (DEBUG) { console.log(chalk.green("lead.name:"), output.results.lead.name); }
+                console.log(chalk.green("lead.name:"), output.results.lead.name);
             }
         }
         /* -------------------------------- */
@@ -459,19 +468,19 @@ exports.scrapper = async (req, res) => {
         /* -------------------------------- */
         // close Puppeteer
         /* -------------------------------- */
-        // console.log("output:", JSON.stringify(output));
         console.log(chalk.cyan("--- closing puppeteer"));
+        res.status(200).send(JSON.stringify(output)).end();
         await page.close();
         await browser.close();
-        res.status(200).send(JSON.stringify(output)).end();
-        return ;
+        // process.exit(0);
+        return;
         /* -------------------------------- */
     } catch {
         console.log(chalk.cyan("--- closing puppeteer"));
+        res.status(422).send({ "error": errors["!puppeteer"] });
         await page.close();
         await browser.close();
-        res.status(500).send({"error": errors["!puppeteer"]});
-        if (await printerror(errors["!puppeteer"], DEBUG, true)) { run_exit(0); };
-        return ;
+        // process.exit(0);
+        return;
     }
 }

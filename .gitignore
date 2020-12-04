@@ -1,3 +1,5 @@
 node_modules
-gsheet.json
+utils
+
 params.json
+service_account.json
