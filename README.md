@@ -16,6 +16,7 @@ WIP
 ## Technologies
 * Puppeteer
 * Google Cloud function
+* Google Cloud functions-framework to run locally
 * also used Google Cloud Storage and Google Spreadsheet API to debug
 
 ## Workflow
