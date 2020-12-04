@@ -1,5 +1,5 @@
 # get_people
-> web scrapping of LinkedIn company profile
+> web scrapping of LinkedIn
 
 ## Table of contents
 * [General info](#general-info)
