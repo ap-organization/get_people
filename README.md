@@ -15,6 +15,8 @@ WIP
 
 ## Technologies
 * Puppeteer
+* Google Cloud function
+* also used Google Cloud Storage and Google Spreadsheet API to debug
 
 ## Workflow
 just puppeteer
