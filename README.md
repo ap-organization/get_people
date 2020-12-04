@@ -40,3 +40,4 @@ Created by [@Fraberg](https://github.com/Fraberg/) - feel free to contact me
 - https://www.youtube.com/watch?v=i8THvr03FaY
 - https://cloud.google.com/functions/docs/functions-framework
 - https://stackoverflow.com/questions/52497252/puppeteer-wait-until-page-is-completely-loaded
+- https://stackoverflow.com/questions/6460604/how-to-describe-object-arguments-in-jsdoc
