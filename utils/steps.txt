@@ -1,0 +1,18 @@
+# create npm project
+$ npm init
+
+# main
+$ npm install --save puppeteer
+
+# optional
+$ npm install --save chalk
+$ npm install --save google-spreadsheet
+
+# test on localhost
+$ npm install --save @google-cloud/functions-framework 
+
+# test locally
+$ npm run start
+
+"@google-cloud/functions-framework": "^1.7.1",
+"google-spreadsheet": "^3.0.14",

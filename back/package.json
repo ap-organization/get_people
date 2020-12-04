@@ -5,14 +5,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "functions-framework --target=scrapper"
+    "localhost": "functions-framework --target=scrapper",
+    "deploy": "gcloud functions deploy scrapper --trigger-http --runtime=nodejs12 --memory=1024MB --region=europe-west1",
+    "start": "functions start && functions deploy --source=. scrapper --trigger-http"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@google-cloud/functions-framework": "^1.7.1",
     "chalk": "^4.1.0",
-    "google-spreadsheet": "^3.0.14",
     "puppeteer": "^5.5.0"
   }
 }

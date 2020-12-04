@@ -12,3 +12,5 @@ curl "localhost:8080/?target_company=https://www.linkedin.com/company/ap-capital
 
 # b) with target_company exists + target_lead exists
 curl "localhost:8080/?target_company=https://www.linkedin.com/company/pennylaneaccounting/about/&target_lead=https://www.linkedin.com/in/arthur-waller-a793a611/"
+
+curl "https://europe-west1-erudite-descent-297518.cloudfunctions.net/scrapper?target_company=https://www.linkedin.com/company/pennylaneaccounting/about/&target_lead=https://www.linkedin.com/in/arthur-waller-a793a611/"
