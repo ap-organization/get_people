@@ -295,7 +295,7 @@ exports.scrapper = async (req, res) => {
             if (presentation_h4) {
                 let elem = await page.evaluateHandle(el => el.nextElementSibling, presentation_h4);
                 output.results.company.about.description = (await (await elem.getProperty("textContent")).jsonValue()).trim();
-                console.log(chalk.green("description:"), output.results.company.about.description);
+                if (DEBUG) { console.log(chalk.green("description:"), output.results.company.about.description); }
             } else {
                 output.results.company.about.description = "na";
                 console.log(chalk.redBright("no description"));
@@ -305,7 +305,7 @@ exports.scrapper = async (req, res) => {
             if (site_web_dt) {
                 let elem_site_web = await page.evaluateHandle(el => el.nextElementSibling, site_web_dt);
                 output.results.company.about.site_url = (await (await elem_site_web.getProperty("textContent")).jsonValue()).trim();
-                console.log(chalk.green("site_url:"), output.results.company.about.site_url);
+                if (DEBUG) { console.log(chalk.green("site_url:"), output.results.company.about.site_url); }
             } else {
                 output.results.company.about.site_url = "na";
                 console.log(chalk.redBright("no site_url"));
@@ -315,7 +315,7 @@ exports.scrapper = async (req, res) => {
             if (sector_dt) {
                 let elem_sector = await page.evaluateHandle(el => el.nextElementSibling, sector_dt);
                 output.results.company.about.sector = (await (await elem_sector.getProperty("textContent")).jsonValue()).trim();
-                console.log(chalk.green("sector:"), output.results.company.about.sector);
+                if (DEBUG) { console.log(chalk.green("sector:"), output.results.company.about.sector); }
             } else {
                 output.results.company.about.sector = "na";
                 console.log(chalk.redBright("no sector"));
@@ -325,7 +325,7 @@ exports.scrapper = async (req, res) => {
             if (employee_range_dt) {
                 let elem_employee_range = await page.evaluateHandle(el => el.nextElementSibling, employee_range_dt);
                 output.results.company.about.employee_range = (await (await elem_employee_range.getProperty("textContent")).jsonValue()).trim();
-                console.log(chalk.green("employee_range:"), output.results.company.about.employee_range);
+                if (DEBUG) { console.log(chalk.green("employee_range:"), output.results.company.about.employee_range); }
                 // output.results.company.about.employee_count
                 try {
                     const [employee_count_dt] = await page.$x(`//dd[contains(., '${output.results.company.about.employee_range}')]`);
@@ -334,7 +334,7 @@ exports.scrapper = async (req, res) => {
                         let result = (await (await elem_employee_count.getProperty("textContent")).jsonValue()).trim();
                         let i = result.indexOf("sur LinkedIn");
                         output.results.company.about.elem_employee_count = result.substring(0, i + 12);
-                        console.log(chalk.green("elem_employee_count:"), output.results.company.about.elem_employee_count);
+                        if (DEBUG) { console.log(chalk.green("elem_employee_count:"), output.results.company.about.elem_employee_count); }
                     } else {
                         output.results.company.about.elem_employee_count = "na";
                         console.log(chalk.redBright("no elem_employee_count"));
@@ -352,7 +352,7 @@ exports.scrapper = async (req, res) => {
             if (headquarters_dt) {
                 let elem_headquarters = await page.evaluateHandle(el => el.nextElementSibling, headquarters_dt);
                 output.results.company.about.headquarters = (await (await elem_headquarters.getProperty("textContent")).jsonValue()).trim();
-                console.log(chalk.green("headquarters:"), output.results.company.about.headquarters);
+                if (DEBUG) { console.log(chalk.green("headquarters:"), output.results.company.about.headquarters); }
             } else {
                 output.results.company.about.headquarters = "na";
                 console.log(chalk.redBright("no headquarters"));
@@ -362,7 +362,7 @@ exports.scrapper = async (req, res) => {
             if (type_dt) {
                 let elem_type = await page.evaluateHandle(el => el.nextElementSibling, type_dt);
                 output.results.company.about.type = (await (await elem_type.getProperty("textContent")).jsonValue()).trim();
-                console.log(chalk.green("type:"), output.results.company.about.type);
+                if (DEBUG) { console.log(chalk.green("type:"), output.results.company.about.type); }
             } else {
                 output.results.company.about.type = "na";
                 console.log(chalk.redBright("no type"));
@@ -393,12 +393,12 @@ exports.scrapper = async (req, res) => {
                         a => a.getAttribute('href')
                     )
                 );
-                // get linkedIn url profiles
+                // get linkedIn url profiles of employees, not relations
                 for (var i = 0; i < hrefs.length; i++) {
                     if (hrefs[i].startsWith("/in/")) {
                         if (!output.results.company.employees.hrefs.includes("https://www.linkedin.com" + hrefs[i])) {
                             let complete_url = "https://www.linkedin.com" + hrefs[i];
-                            console.log(chalk.green("employee.url:"), complete_url);
+                            if (DEBUG) { console.log(chalk.green("employee.url:"), complete_url); }
                             output.results.company.employees.hrefs.push(complete_url);
                             if (output.query.target_lead != "na" && complete_url === output.query.target_lead) {
                                 output.results.lead.linkedin_profile = complete_url;
@@ -406,23 +406,10 @@ exports.scrapper = async (req, res) => {
                         }
                     }
                 }
-                // get names
-                // const elements = await page.$$('span.distance-badge');
-                // for (var i = 0; i < elements.length; i++) {
-                //     let employee = {
-                //         linkedin_url: "",
-                //         name: "",
-                //         position: "",
-                //         location: ""
-                //     }
-                //     let span_with_name = await page.evaluateHandle(el => el.previousElementSibling, elements[i]);
-                //     employee.name = (await (await span_with_name.getProperty("textContent")).jsonValue()).trim();
-                //     output.results.company.employees.list.push(employee);
-                //     console.log(chalk.green("employee.name:"), employee.name);
-                // }
-
                 // get employee data
                 for (var i = 0; i < output.results.company.employees.hrefs.length; i++) {
+                    let href_i = output.results.company.employees.hrefs[i].substring(24);
+                    // console.log("href_i:", href_i);
                     let employee = {
                         linkedin_url: "na",
                         name: "na",
@@ -433,9 +420,8 @@ exports.scrapper = async (req, res) => {
                         isCFO: "false",
                         isCTO: "false"
                     }
+                    // linkedin_url
                     employee.linkedin_url = output.results.company.employees.hrefs[i];
-                    let href_i = output.results.company.employees.hrefs[i].substring(24);
-                    console.log("href_i:", href_i);
                     const a_hrefs_employee = await page.$x(`//a[@href='${href_i}']`);
                     // name
                     let name = await page.evaluateHandle(el => el, a_hrefs_employee[1]);
@@ -464,7 +450,7 @@ exports.scrapper = async (req, res) => {
                     for (var j = 0; j < cto_titles.length; j++) {
                         if (position_lower.includes(cto_titles[j])) { employee.isCTO = "true"; }
                     }
-                    console.table(employee);
+                    if (DEBUG) { console.table(employee); }
                     output.results.company.employees.list.push(employee);
                 }
             } catch (error) {
