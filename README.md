@@ -1,5 +1,5 @@
 # get_people
-> web scrapping of LinkedIn company profile
+> web scrapping of LinkedIn
 
 ## Table of contents
 * [General info](#general-info)
@@ -15,6 +15,9 @@ WIP
 
 ## Technologies
 * Puppeteer
+* Google Cloud function
+* Google Cloud functions-framework to run locally
+* also used Google Cloud Storage and Google Spreadsheet API to debug
 
 ## Workflow
 just puppeteer
@@ -41,3 +44,4 @@ Created by [@Fraberg](https://github.com/Fraberg/) - feel free to contact me
 - https://cloud.google.com/functions/docs/functions-framework
 - https://stackoverflow.com/questions/52497252/puppeteer-wait-until-page-is-completely-loaded
 - https://stackoverflow.com/questions/6460604/how-to-describe-object-arguments-in-jsdoc
+- https://cloud.google.com/functions/docs/concepts/exec#:~:text=a%20storage%20option.-,Auto%2Dscaling%20and%20Concurrency,to%20instances%20of%20your%20function.&text=This%20automatic%20scaling%20behavior%20allows,different%20instance%20of%20your%20function.
