@@ -7,6 +7,7 @@
 const puppeteer = require('puppeteer');
 const params = require('./params.json');
 const chalk = require('chalk');
+const { GoogleSpreadsheet } = require('google-spreadsheet');
 
 const errors = {
     "!query": "!query - can't find query param",
@@ -77,9 +78,11 @@ exports.scrapper = async (req, res) => {
     /* -------------------------------- */
     res.setHeader('Content-Type', 'application/json');
     let output = {
-        query: {
-            target_company: "",
-            target_lead: ""
+        meta: {
+            params: {
+                target_company: "",
+                target_lead: ""
+            }
         },
         results: {
             company: {
@@ -119,9 +122,9 @@ exports.scrapper = async (req, res) => {
     // @param {string} target_lead - is optional
     /* -------------------------------- */
     console.log(chalk.cyan("--- parse query params"));
-    output.query.target_company = req.query.hasOwnProperty('target_company') ? req.query.target_company.trim() : "na";
-    output.query.target_lead = req.query.hasOwnProperty('target_lead') ? req.query.target_lead.trim() : "na";
-    if (output.query.target_company === "na") {
+    output.meta.params.target_company = req.query.hasOwnProperty('target_company') ? req.query.target_company.trim() : "na";
+    output.meta.params.target_lead = req.query.hasOwnProperty('target_lead') ? req.query.target_lead.trim() : "na";
+    if (output.meta.params.target_company === "na") {
         res.status(400).send({ "error": errors["!query"] });
         return;
     }
@@ -249,8 +252,8 @@ exports.scrapper = async (req, res) => {
         /* -------------------------------- */
         try {
             console.log(chalk.cyan("--- get target company data"));
-            console.log(chalk.yellow("go to:", output.query.target_company));
-            await page.goto(output.query.target_company, { waitUntil: 'domcontentloaded' });
+            console.log(chalk.yellow("go to:", output.meta.params.target_company));
+            await page.goto(output.meta.params.target_company, { waitUntil: 'domcontentloaded' });
             // await wait(1000);
             // await page.waitForNavigation();
 
@@ -259,7 +262,7 @@ exports.scrapper = async (req, res) => {
             /* -------------------------------- */
             const [company_doesnt_exit] = await page.$x("//p[contains(., 'est pas disponible')]");
             if (company_doesnt_exit) {
-                console.log(chalk.red("profile", output.query.target_company, "does not exist"));
+                console.log(chalk.red("profile", output.meta.params.target_company, "does not exist"));
                 console.log(chalk.cyan("--- closing puppeteer"));
                 res.status(422).send({ "error": errors["!profile"] });
                 await page.close();
@@ -400,7 +403,7 @@ exports.scrapper = async (req, res) => {
                             let complete_url = "https://www.linkedin.com" + hrefs[i];
                             if (DEBUG) { console.log(chalk.green("employee.url:"), complete_url); }
                             output.results.company.employees.hrefs.push(complete_url);
-                            if (output.query.target_lead != "na" && complete_url === output.query.target_lead) {
+                            if (output.meta.params.target_lead != "na" && complete_url === output.meta.params.target_lead) {
                                 output.results.lead.linkedin_profile = complete_url;
                             }
                         }
@@ -468,10 +471,10 @@ exports.scrapper = async (req, res) => {
         /* -------------------------------- */
         // get name of target lead
         /* -------------------------------- */
-        if (output.query.target_lead != "na") {
+        if (output.meta.params.target_lead != "na") {
             console.log(chalk.cyan("--- get name of target lead"));
-            console.log(chalk.yellow("go to:", output.query.target_lead));
-            await page.goto(output.query.target_lead, { waitUntil: 'domcontentloaded' });
+            console.log(chalk.yellow("go to:", output.meta.params.target_lead));
+            await page.goto(output.meta.params.target_lead, { waitUntil: 'domcontentloaded' });
             // await page.waitForNavigation();
             // await wait(1000);
 
@@ -480,7 +483,7 @@ exports.scrapper = async (req, res) => {
             /* -------------------------------- */
             const [lead_doesnt_exit] = await page.$x("//h1[contains(., 'est pas disponible')]");
             if (lead_doesnt_exit) {
-                console.log(chalk.red("profile", output.query.target_lead, "does NOT exist"));
+                console.log(chalk.red("profile", output.meta.params.target_lead, "does NOT exist"));
                 console.log(chalk.cyan("--- closing puppeteer"));
                 res.status(422).send({ "error": errors["!profile"] });
                 await page.close();
@@ -505,7 +508,7 @@ exports.scrapper = async (req, res) => {
         /* -------------------------------- */
         // close Puppeteer
         /* -------------------------------- */
-        console.log(chalk.cyan("--- closing puppeteer"));
+        console.log(chalk.cyan("--- closing puppeteer, no error"));
         res.status(200).send(JSON.stringify(output)).end();
         await page.close();
         await browser.close();
