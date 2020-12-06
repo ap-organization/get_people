@@ -42,7 +42,7 @@ async function autoScroll(page) {
 /**
  * wait
  * @param {puppeteer object} page - the page to scroll down
- */ 
+ */
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
 /**
@@ -142,7 +142,7 @@ exports.scrapper = async (req, res) => {
     let args = [
         '--disable-gpu',
         '--no-sandbox',
-        '--headless',
+        // '--headless',
         `--proxy-server=${some_ip}`,
         '--disable-dev-shm-usage',
         '--disable-setuid-sandbox',
@@ -152,7 +152,7 @@ exports.scrapper = async (req, res) => {
         '--deterministic-fetch',
     ];
     let browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         defaultViewport: null,
         args: args
     });
@@ -205,7 +205,7 @@ exports.scrapper = async (req, res) => {
                 /* -------------------------------- */
                 console.log("trying to type code label");
                 await page.type('#input__email_verification_pin', String(a1.value), { delay: 30 }); // params.linkedin.auth.fake.password
-                
+
                 console.log(chalk.yellow("trying to get code submit"));
                 const [code_submit] = await page.$x("//button[contains(., 'Envoyer')]");
                 if (code_submit) { console.log("code_submit is selected"); };
@@ -295,7 +295,7 @@ exports.scrapper = async (req, res) => {
             if (presentation_h4) {
                 let elem = await page.evaluateHandle(el => el.nextElementSibling, presentation_h4);
                 output.results.company.about.description = (await (await elem.getProperty("textContent")).jsonValue()).trim();
-                if (DEBUG) { console.log(chalk.green("description:"), output.results.company.about.description); }
+                console.log(chalk.green("description:"), output.results.company.about.description);
             } else {
                 output.results.company.about.description = "na";
                 console.log(chalk.redBright("no description"));
@@ -305,7 +305,7 @@ exports.scrapper = async (req, res) => {
             if (site_web_dt) {
                 let elem_site_web = await page.evaluateHandle(el => el.nextElementSibling, site_web_dt);
                 output.results.company.about.site_url = (await (await elem_site_web.getProperty("textContent")).jsonValue()).trim();
-                if (DEBUG) { console.log(chalk.green("site_url:"), output.results.company.about.site_url); }
+                console.log(chalk.green("site_url:"), output.results.company.about.site_url);
             } else {
                 output.results.company.about.site_url = "na";
                 console.log(chalk.redBright("no site_url"));
@@ -315,7 +315,7 @@ exports.scrapper = async (req, res) => {
             if (sector_dt) {
                 let elem_sector = await page.evaluateHandle(el => el.nextElementSibling, sector_dt);
                 output.results.company.about.sector = (await (await elem_sector.getProperty("textContent")).jsonValue()).trim();
-                if (DEBUG) { console.log(chalk.green("sector:"), output.results.company.about.sector); }
+                console.log(chalk.green("sector:"), output.results.company.about.sector);
             } else {
                 output.results.company.about.sector = "na";
                 console.log(chalk.redBright("no sector"));
@@ -325,7 +325,7 @@ exports.scrapper = async (req, res) => {
             if (employee_range_dt) {
                 let elem_employee_range = await page.evaluateHandle(el => el.nextElementSibling, employee_range_dt);
                 output.results.company.about.employee_range = (await (await elem_employee_range.getProperty("textContent")).jsonValue()).trim();
-                if (DEBUG) { console.log(chalk.green("employee_range:"), output.results.company.about.employee_range); }
+                console.log(chalk.green("employee_range:"), output.results.company.about.employee_range);
                 // output.results.company.about.employee_count
                 try {
                     const [employee_count_dt] = await page.$x(`//dd[contains(., '${output.results.company.about.employee_range}')]`);
@@ -334,7 +334,7 @@ exports.scrapper = async (req, res) => {
                         let result = (await (await elem_employee_count.getProperty("textContent")).jsonValue()).trim();
                         let i = result.indexOf("sur LinkedIn");
                         output.results.company.about.elem_employee_count = result.substring(0, i + 12);
-                        if (DEBUG) { console.log(chalk.green("elem_employee_count:"), output.results.company.about.elem_employee_count); }
+                        console.log(chalk.green("elem_employee_count:"), output.results.company.about.elem_employee_count);
                     } else {
                         output.results.company.about.elem_employee_count = "na";
                         console.log(chalk.redBright("no elem_employee_count"));
@@ -352,7 +352,7 @@ exports.scrapper = async (req, res) => {
             if (headquarters_dt) {
                 let elem_headquarters = await page.evaluateHandle(el => el.nextElementSibling, headquarters_dt);
                 output.results.company.about.headquarters = (await (await elem_headquarters.getProperty("textContent")).jsonValue()).trim();
-                if (DEBUG) { console.log(chalk.green("headquarters:"), output.results.company.about.headquarters); }
+                console.log(chalk.green("headquarters:"), output.results.company.about.headquarters);
             } else {
                 output.results.company.about.headquarters = "na";
                 console.log(chalk.redBright("no headquarters"));
@@ -362,7 +362,7 @@ exports.scrapper = async (req, res) => {
             if (type_dt) {
                 let elem_type = await page.evaluateHandle(el => el.nextElementSibling, type_dt);
                 output.results.company.about.type = (await (await elem_type.getProperty("textContent")).jsonValue()).trim();
-                if (DEBUG) { console.log(chalk.green("type:"), output.results.company.about.type); }
+                console.log(chalk.green("type:"), output.results.company.about.type);
             } else {
                 output.results.company.about.type = "na";
                 console.log(chalk.redBright("no type"));
@@ -395,29 +395,80 @@ exports.scrapper = async (req, res) => {
                 );
                 // get linkedIn url profiles
                 for (var i = 0; i < hrefs.length; i++) {
-                    if (hrefs[i].startsWith("/in/") && output.results.company.employees.hrefs.indexOf(hrefs[i]) > -1) {
-                        let complete_url = "https://www.linkedin.com" + hrefs[i];
-                        output.results.company.employees.hrefs.push(complete_url);
-                        if (output.params.target_lead != "na" && complete_url === output.params.target_lead) {
-                            output.results.lead.linkedin_profile = complete_url;
+                    if (hrefs[i].startsWith("/in/")) {
+                        if (!output.results.company.employees.hrefs.includes("https://www.linkedin.com" + hrefs[i])) {
+                            let complete_url = "https://www.linkedin.com" + hrefs[i];
+                            console.log(chalk.green("employee.url:"), complete_url);
+                            output.results.company.employees.hrefs.push(complete_url);
+                            if (output.query.target_lead != "na" && complete_url === output.query.target_lead) {
+                                output.results.lead.linkedin_profile = complete_url;
+                            }
                         }
                     }
                 }
                 // get names
-                const elements = await page.$$('span.distance-badge');
-                for (var i = 0; i < elements.length; i++) {
+                // const elements = await page.$$('span.distance-badge');
+                // for (var i = 0; i < elements.length; i++) {
+                //     let employee = {
+                //         linkedin_url: "",
+                //         name: "",
+                //         position: "",
+                //         location: ""
+                //     }
+                //     let span_with_name = await page.evaluateHandle(el => el.previousElementSibling, elements[i]);
+                //     employee.name = (await (await span_with_name.getProperty("textContent")).jsonValue()).trim();
+                //     output.results.company.employees.list.push(employee);
+                //     console.log(chalk.green("employee.name:"), employee.name);
+                // }
+
+                // get employee data
+                for (var i = 0; i < output.results.company.employees.hrefs.length; i++) {
                     let employee = {
-                        linkedin_url: "",
-                        name: "",
-                        position: "",
-                        location: ""
+                        linkedin_url: "na",
+                        name: "na",
+                        position: "na",
+                        location: "na",
+                        isFounder: "false",
+                        isCEO: "false",
+                        isCFO: "false",
+                        isCTO: "false"
                     }
-                    let separator = await page.evaluateHandle(el => el.previousElementSibling, elements[i]);
-                    employee.name = (await (await separator.getProperty("textContent")).jsonValue()).trim();
+                    employee.linkedin_url = output.results.company.employees.hrefs[i];
+                    let href_i = output.results.company.employees.hrefs[i].substring(24);
+                    console.log("href_i:", href_i);
+                    const a_hrefs_employee = await page.$x(`//a[@href='${href_i}']`);
+                    // name
+                    let name = await page.evaluateHandle(el => el, a_hrefs_employee[1]);
+                    employee.name = (await (await name.getProperty("textContent")).jsonValue()).trim().split(/\n/)[0];
+                    // position
+                    let position = await page.evaluateHandle(el => el.nextElementSibling, a_hrefs_employee[1]);
+                    employee.position = (await (await position.getProperty("textContent")).jsonValue()).trim();
+                    // position
+                    let location = await page.evaluateHandle(el => el.nextElementSibling, position);
+                    employee.location = (await (await location.getProperty("textContent")).jsonValue()).trim();
+                    // is key
+                    let position_lower = employee.position.toLowerCase();
+                    let founder_titles = ["fondateur", "cofondateur", "co-fondateur", "founder", "cofounder", "co-founder"];
+                    let ceo_titles = ["ceo", "managing partner"];
+                    let cfo_titles = ["cfo"];
+                    let cto_titles = ["cto"];
+                    for (var j = 0; j < founder_titles.length; j++) {
+                        if (position_lower.includes(founder_titles[j])) { employee.isFounder = "true"; }
+                    }
+                    for (var j = 0; j < ceo_titles.length; j++) {
+                        if (position_lower.includes(ceo_titles[j])) { employee.isCEO = "true"; }
+                    }
+                    for (var j = 0; j < cfo_titles.length; j++) {
+                        if (position_lower.includes(cfo_titles[j])) { employee.isCFO = "true"; }
+                    }
+                    for (var j = 0; j < cto_titles.length; j++) {
+                        if (position_lower.includes(cto_titles[j])) { employee.isCTO = "true"; }
+                    }
+                    console.table(employee);
                     output.results.company.employees.list.push(employee);
-                    console.log(chalk.green("employee.name:"), employee.name);
                 }
-            } catch {
+            } catch (error) {
+                console.log(chalk.red("error:", error));
                 console.log(chalk.cyan("--- closing puppeteer"));
                 res.status(422).send({ "error": errors["!employees"] });
                 await page.close();
