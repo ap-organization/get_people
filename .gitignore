@@ -1,5 +1,5 @@
 node_modules
-utils
+local
 
 params.json
 service_account.json

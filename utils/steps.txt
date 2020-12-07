@@ -1,0 +1,21 @@
+# config google cloud CLI
+$ gcloud config
+
+# create npm project
+$ npm init
+
+# main
+$ npm install --save puppeteer
+
+# optional
+$ npm install --save chalk
+$ npm install --save google-spreadsheet
+
+# test on localhost
+$ npm install --save @google-cloud/functions-framework 
+
+# test locally
+$ npm run start
+
+# deploy
+$ gcloud functions deploy scrapper --trigger-http --runtime=nodejs10 --memory=1024MB --region=europe-west1
