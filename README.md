@@ -17,8 +17,8 @@ WIP
 * Puppeteer
 * Google Cloud function
 * Google Cloud functions-framework to run locally
-* also used Google Cloud Storage and Google Spreadsheet API to debug
 * Some nice Google Sheet API wrapper ([npm](https://www.npmjs.com/package/google-spreadsheet) | [doc](https://theoephraim.github.io/node-google-spreadsheet/#/))
+* also used Google Cloud Storage to debug
 
 ## Workflow
 just puppeteer
